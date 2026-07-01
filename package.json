@@ -8,7 +8,8 @@
     "url": "git+https://github.com/holdenmatt/md-parser.git"
   },
   "files": [
-    "dist"
+    "dist",
+    "SPEC.md"
   ],
   "type": "module",
   "exports": {
