@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build and test output
+dist/
+coverage/
+
+# Tool caches
+*.tsbuildinfo
+.vite/
+
+# Logs
+logs/
+*.log
+pnpm-debug.log*
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
+
+# Local workspace state
+.context/
