@@ -28,7 +28,7 @@ document.raw; // original markdown
 document.frontmatter; // Record<string, unknown>
 document.body; // markdown without frontmatter
 document.sections[0]?.heading; // "Notes"
-document.codeBlocks; // fenced and indented code blocks
+document.codeBlocks; // code blocks with body-relative source ranges
 
 const markdown = stringify({
   frontmatter: { title: "Example" },
@@ -63,6 +63,25 @@ type MarkdownDocument = {
   codeBlocks: MarkdownCodeBlock[];
 };
 ```
+
+Code blocks expose a `sourceRange` when parser offsets are available:
+
+```ts
+type MarkdownCodeBlock = {
+  info: string;
+  language: string | undefined;
+  meta: string | undefined;
+  value: string;
+  sourceRange: MarkdownSourceRange | undefined;
+};
+
+type MarkdownSourceRange = {
+  start: number;
+  end: number;
+};
+```
+
+`sourceRange` offsets are relative to `MarkdownDocument.body`, not the original raw Markdown with frontmatter.
 
 Frontmatter is intentionally untyped. Application packages can refine it with their own schemas, or use [`@holdenmatt/md-schema`](https://github.com/holdenmatt/md-schema) for typed frontmatter parsing.
 

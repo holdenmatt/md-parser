@@ -2,8 +2,12 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, test } from "vitest";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { MarkdownParseError, parse, parseFile, type MarkdownDocument } from "../src/index.js";
+
+afterEach(() => {
+  vi.doUnmock("unified");
+});
 
 describe("parse", () => {
   test("parses frontmatter, body, and raw markdown", () => {
@@ -71,16 +75,21 @@ Done.
     ]);
   });
 
-  test("extracts code blocks without interpreting their language", () => {
-    const document = parse(`Text.
+  test("extracts fenced code block source range with language and meta", () => {
+    const markdown = `---
+title: Example
+---
+
+Text.
 
 \`\`\`yaml title="tokens"
 colors:
   primary: "#000"
 \`\`\`
-
-    indented code
-`);
+`;
+    const document = parse(markdown);
+    const source = '```yaml title="tokens"\ncolors:\n  primary: "#000"\n```';
+    const start = document.body.indexOf(source);
 
     expect(document.codeBlocks).toEqual([
       {
@@ -88,12 +97,126 @@ colors:
         language: "yaml",
         meta: 'title="tokens"',
         value: 'colors:\n  primary: "#000"',
+        sourceRange: {
+          start,
+          end: start + source.length,
+        },
       },
+    ]);
+    expect(document.body.slice(start, start + source.length)).toBe(source);
+  });
+
+  test("extracts fenced code block source range without meta", () => {
+    const document = parse(`Before.
+
+\`\`\`ts
+console.log("hello");
+\`\`\`
+
+After.
+`);
+    const source = '```ts\nconsole.log("hello");\n```';
+    const start = document.body.indexOf(source);
+
+    expect(document.codeBlocks).toEqual([
+      {
+        info: "ts",
+        language: "ts",
+        meta: undefined,
+        value: 'console.log("hello");',
+        sourceRange: {
+          start,
+          end: start + source.length,
+        },
+      },
+    ]);
+  });
+
+  test("extracts source ranges for multiple code blocks", () => {
+    const document = parse(`First.
+
+\`\`\`js
+console.log("one");
+\`\`\`
+
+Middle.
+
+\`\`\`
+plain text
+\`\`\`
+
+Done.
+`);
+    const sources = ['```js\nconsole.log("one");\n```', "```\nplain text\n```"];
+
+    expect(document.codeBlocks).toHaveLength(2);
+    expect(document.codeBlocks.map((block) => block.sourceRange)).toEqual(
+      sources.map((source) => {
+        const start = document.body.indexOf(source);
+        return {
+          start,
+          end: start + source.length,
+        };
+      }),
+    );
+    expect(
+      document.codeBlocks.map((block) =>
+        block.sourceRange === undefined
+          ? undefined
+          : document.body.slice(block.sourceRange.start, block.sourceRange.end),
+      ),
+    ).toEqual(sources);
+  });
+
+  test("extracts indented code blocks without interpreting their language", () => {
+    const document = parse(`Text.
+
+    indented code
+`);
+
+    expect(document.codeBlocks).toEqual([
       {
         info: "",
         language: undefined,
         meta: undefined,
         value: "indented code",
+        sourceRange: {
+          start: 7,
+          end: 24,
+        },
+      },
+    ]);
+  });
+
+  test("returns undefined sourceRange when parser offsets are unavailable", async () => {
+    vi.resetModules();
+    vi.doMock("unified", () => ({
+      unified: () => ({
+        use: () => ({
+          parse: () => ({
+            type: "root",
+            children: [
+              {
+                type: "code",
+                lang: "js",
+                meta: undefined,
+                value: "console.log(1);",
+              },
+            ],
+          }),
+        }),
+      }),
+    }));
+
+    const { parse: parseWithoutOffsets } = await import("../src/parse.js?without-offsets");
+
+    expect(parseWithoutOffsets("```js\nconsole.log(1);\n```").codeBlocks).toEqual([
+      {
+        info: "js",
+        language: "js",
+        meta: undefined,
+        value: "console.log(1);",
+        sourceRange: undefined,
       },
     ]);
   });

@@ -29,7 +29,9 @@ md-parser parses one Markdown document into stable structural views and can stri
 ## Code Blocks
 
 - Code blocks come from the parsed body structure.
-- Each block exposes `info`, `language`, `meta`, and `value`.
+- Each block exposes `info`, `language`, `meta`, `value`, and `sourceRange`.
+- `sourceRange` is `{ start, end }` when parser offsets are available.
+- `sourceRange` offsets are relative to `MarkdownDocument.body`.
 - Code block language and metadata are not interpreted.
 
 ## Stringify

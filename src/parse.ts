@@ -55,6 +55,17 @@ export type MarkdownSection = {
 };
 
 /**
+ * Character range in parsed Markdown body text.
+ */
+export type MarkdownSourceRange = {
+  /** Inclusive start offset. */
+  start: number;
+
+  /** Exclusive end offset. */
+  end: number;
+};
+
+/**
  * Markdown code block from the body.
  */
 export type MarkdownCodeBlock = {
@@ -69,6 +80,9 @@ export type MarkdownCodeBlock = {
 
   /** Code block content. */
   value: string;
+
+  /** Full source range in MarkdownDocument.body, when parser offsets are available. */
+  sourceRange: MarkdownSourceRange | undefined;
 };
 
 const markdownParser = unified().use(remarkParse);
@@ -158,10 +172,22 @@ function extractCodeBlocks(ast: Root): MarkdownCodeBlock[] {
       language,
       meta,
       value: code.value,
+      sourceRange: sourceRangeFromPosition(code.position),
     });
   });
 
   return blocks;
+}
+
+/**
+ * Convert parser offsets into the public source range shape.
+ */
+function sourceRangeFromPosition(position: Code["position"]): MarkdownSourceRange | undefined {
+  const start = position?.start.offset;
+  const end = position?.end.offset;
+  if (start === undefined || end === undefined) return undefined;
+
+  return { start, end };
 }
 
 /**
