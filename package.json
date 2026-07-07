@@ -1,6 +1,6 @@
 {
   "name": "@holdenmatt/md-parser",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Markdown parser primitives for frontmatter, body text, sections, and code blocks.",
   "license": "MIT",
   "repository": {
@@ -15,7 +15,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
