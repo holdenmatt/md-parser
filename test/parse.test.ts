@@ -188,6 +188,93 @@ Done.
     ]);
   });
 
+  test("extracts one ordinary inline link", () => {
+    const document = parse("See [Daily trend](./queries/daily_trend.sql).\n");
+    const source = "[Daily trend](./queries/daily_trend.sql)";
+    const start = document.body.indexOf(source);
+
+    expect(document.links).toEqual([
+      {
+        text: "Daily trend",
+        destination: "./queries/daily_trend.sql",
+        sourceRange: {
+          start,
+          end: start + source.length,
+        },
+      },
+    ]);
+  });
+
+  test("extracts multiple inline links in source order", () => {
+    const document = parse(
+      "Read [overview](./overview.md), then [details](https://example.com/details).\n",
+    );
+
+    expect(document.links.map((link) => link.text)).toEqual(["overview", "details"]);
+    expect(document.links.map((link) => link.destination)).toEqual([
+      "./overview.md",
+      "https://example.com/details",
+    ]);
+  });
+
+  test("preserves relative-file link destinations", () => {
+    const document = parse("[Query](../sql/report.sql)\n");
+
+    expect(document.links[0]?.destination).toBe("../sql/report.sql");
+  });
+
+  test("extracts plain text from formatted link labels", () => {
+    const document = parse("[Daily **trend** `query`](./queries/daily_trend.sql)\n");
+
+    expect(document.links[0]?.text).toBe("Daily trend query");
+  });
+
+  test("does not include images in links", () => {
+    const document = parse("![Diagram](./diagram.png)\n\n[Doc](./doc.md)\n");
+    const source = "[Doc](./doc.md)";
+    const start = document.body.indexOf(source);
+
+    expect(document.links).toEqual([
+      {
+        text: "Doc",
+        destination: "./doc.md",
+        sourceRange: {
+          start,
+          end: start + source.length,
+        },
+      },
+    ]);
+  });
+
+  test("extracts link source ranges relative to body when frontmatter is present", () => {
+    const markdown = `---
+title: Links
+---
+
+See [Daily trend](./queries/daily_trend.sql).
+`;
+    const document = parse(markdown);
+    const source = "[Daily trend](./queries/daily_trend.sql)";
+    const start = document.body.indexOf(source);
+
+    expect(document.links[0]?.sourceRange).toEqual({
+      start,
+      end: start + source.length,
+    });
+    expect(document.links[0]?.sourceRange).not.toEqual({
+      start: markdown.indexOf(source),
+      end: markdown.indexOf(source) + source.length,
+    });
+    expect(
+      document.links[0]?.sourceRange === undefined
+        ? undefined
+        : document.body.slice(
+            document.links[0].sourceRange.start,
+            document.links[0].sourceRange.end,
+          ),
+    ).toBe(source);
+  });
+
   test("returns undefined sourceRange when parser offsets are unavailable", async () => {
     vi.resetModules();
     vi.doMock("unified", () => ({
@@ -208,7 +295,7 @@ Done.
       }),
     }));
 
-    const { parse: parseWithoutOffsets } = await import("../src/parse.js?without-offsets");
+    const { parse: parseWithoutOffsets } = await import("../src/parse.js");
 
     expect(parseWithoutOffsets("```js\nconsole.log(1);\n```").codeBlocks).toEqual([
       {

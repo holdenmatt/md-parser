@@ -6,11 +6,11 @@ md-parser parses one Markdown document into stable structural views and can stri
 
 - md-parser parses document structure, not document meaning.
 - Frontmatter remains untyped; application packages refine it.
-- The package does not define application semantics for headings, code block languages, directives, macros, or other Markdown content.
+- The package does not define application semantics for headings, code block languages, link destinations, directives, macros, or other Markdown content.
 
 ## Parse
 
-- `parse(markdown)` returns `{ raw, frontmatter, body, sections, codeBlocks }`.
+- `parse(markdown)` returns `{ raw, frontmatter, body, sections, codeBlocks, links }`.
 - `raw` is the original input string.
 - `frontmatter` is parsed YAML data or `{}`.
 - Invalid frontmatter fails.
@@ -34,8 +34,20 @@ md-parser parses one Markdown document into stable structural views and can stri
 - `sourceRange` offsets are relative to `MarkdownDocument.body`.
 - Code block language and metadata are not interpreted.
 
+## Links
+
+- Links are a narrow structural projection of ordinary inline Markdown links.
+- Images are excluded from `links`.
+- Each link exposes `text`, `destination`, and `sourceRange`.
+- `text` is the plain-text label extracted from the link child content.
+- `destination` is the URL reported by the Markdown parser.
+- `sourceRange` is `{ start, end }` when parser offsets are available.
+- `sourceRange` offsets are relative to `MarkdownDocument.body`.
+- Link destinations are not resolved, decoded, validated, or interpreted.
+- Reference-style links, unresolved references, autolinks, and bare URLs are unspecified.
+
 ## Stringify
 
 - `stringify({ frontmatter, body })` serializes frontmatter and body text.
 - Empty or omitted frontmatter returns the body unchanged.
-- Stringify does not use `sections` or `codeBlocks`.
+- Stringify does not use `sections`, `codeBlocks`, or `links`.

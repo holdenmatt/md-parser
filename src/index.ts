@@ -4,6 +4,7 @@ export { stringify } from "./stringify.js";
 export type {
   MarkdownCodeBlock,
   MarkdownDocument,
+  MarkdownLink,
   MarkdownSection,
   MarkdownSourceRange,
 } from "./parse.js";

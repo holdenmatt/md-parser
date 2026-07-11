@@ -1,8 +1,8 @@
 # md-parser
 
-Markdown parser primitives for frontmatter, body text, sections, and code blocks.
+Markdown parser primitives for frontmatter, body text, sections, code blocks, and links.
 
-`@holdenmatt/md-parser` provides shared Markdown parser primitives for generic document structure. It parses untyped frontmatter, frontmatter-free body text, flat heading sections, and code blocks without assigning application meaning to the content.
+`@holdenmatt/md-parser` provides shared Markdown parser primitives for generic document structure. It parses untyped frontmatter, frontmatter-free body text, flat heading sections, code blocks, and ordinary inline links without assigning application meaning to the content.
 
 ## Install
 
@@ -29,6 +29,7 @@ document.frontmatter; // Record<string, unknown>
 document.body; // markdown without frontmatter
 document.sections[0]?.heading; // "Notes"
 document.codeBlocks; // code blocks with body-relative source ranges
+document.links; // ordinary inline links with body-relative source ranges
 
 const markdown = stringify({
   frontmatter: { title: "Example" },
@@ -61,6 +62,7 @@ type MarkdownDocument = {
   body: string;
   sections: MarkdownSection[];
   codeBlocks: MarkdownCodeBlock[];
+  links: MarkdownLink[];
 };
 ```
 
@@ -82,6 +84,18 @@ type MarkdownSourceRange = {
 ```
 
 `sourceRange` offsets are relative to `MarkdownDocument.body`, not the original raw Markdown with frontmatter.
+
+Links are a narrow structural projection of ordinary inline Markdown links:
+
+```ts
+type MarkdownLink = {
+  text: string;
+  destination: string;
+  sourceRange: MarkdownSourceRange | undefined;
+};
+```
+
+`text` is a plain-text label extracted from the link contents. `destination` is the URL reported by the Markdown parser. Images are excluded, and destinations are not resolved, decoded, validated, or interpreted.
 
 Frontmatter is intentionally untyped. Application packages can refine it with their own schemas, or use [`@holdenmatt/md-schema`](https://github.com/holdenmatt/md-schema) for typed frontmatter parsing.
 

@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { Code, Content, Heading, Root } from "mdast";
+import type { Code, Content, Heading, Link, Root } from "mdast";
 import matter from "gray-matter";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
@@ -38,6 +38,9 @@ export type MarkdownDocument = {
 
   /** Code blocks from the body. */
   codeBlocks: MarkdownCodeBlock[];
+
+  /** Inline links from the body. */
+  links: MarkdownLink[];
 };
 
 /**
@@ -85,6 +88,20 @@ export type MarkdownCodeBlock = {
   sourceRange: MarkdownSourceRange | undefined;
 };
 
+/**
+ * Inline Markdown link from the body.
+ */
+export type MarkdownLink = {
+  /** Plain-text label shown for the link. */
+  text: string;
+
+  /** Link destination reported by the Markdown parser. */
+  destination: string;
+
+  /** Full link occurrence within MarkdownDocument.body, when offsets are available. */
+  sourceRange: MarkdownSourceRange | undefined;
+};
+
 const markdownParser = unified().use(remarkParse);
 
 /**
@@ -111,6 +128,7 @@ export function parse(markdown: string): MarkdownDocument {
       body: parsed.content,
       sections: extractSections(parsed.content, ast),
       codeBlocks: extractCodeBlocks(ast),
+      links: extractLinks(ast),
     };
   } catch (error) {
     throw new MarkdownParseError("MARKDOWN_PARSE_ERROR", "Could not parse markdown body.", error);
@@ -180,9 +198,28 @@ function extractCodeBlocks(ast: Root): MarkdownCodeBlock[] {
 }
 
 /**
+ * Collect ordinary inline links without resolving or validating destinations.
+ */
+function extractLinks(ast: Root): MarkdownLink[] {
+  const links: MarkdownLink[] = [];
+  visit(ast, (node) => {
+    if (node.type !== "link") return;
+
+    const link = node as Link;
+    links.push({
+      text: textFromNode(link),
+      destination: link.url,
+      sourceRange: sourceRangeFromPosition(link.position),
+    });
+  });
+
+  return links;
+}
+
+/**
  * Convert parser offsets into the public source range shape.
  */
-function sourceRangeFromPosition(position: Code["position"]): MarkdownSourceRange | undefined {
+function sourceRangeFromPosition(position: Root["position"]): MarkdownSourceRange | undefined {
   const start = position?.start.offset;
   const end = position?.end.offset;
   if (start === undefined || end === undefined) return undefined;
