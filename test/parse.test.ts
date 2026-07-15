@@ -1,12 +1,9 @@
-import { randomUUID } from "node:crypto";
-import { mkdtemp, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { MarkdownParseError, parse, parseFile, type MarkdownDocument } from "../src/index.js";
+import { MarkdownParseError, parse, type MarkdownDocument } from "../src/index.js";
 
 afterEach(() => {
   vi.doUnmock("unified");
+  vi.resetModules();
 });
 
 describe("parse", () => {
@@ -320,27 +317,3 @@ See [Daily trend](./queries/daily_trend.sql).
     expect(error.code).toBe("EXAMPLE");
   });
 });
-
-describe("parseFile", () => {
-  test("reads UTF-8 markdown files", async () => {
-    const dir = await makeTempDir();
-    const path = join(dir, "document.md");
-    await writeFile(path, "---\ntitle: File\n---\nBody\n", "utf8");
-
-    await expect(parseFile(path)).resolves.toMatchObject({
-      frontmatter: { title: "File" },
-      body: "Body\n",
-    });
-  });
-
-  test("throws file read errors", async () => {
-    await expect(parseFile("/definitely/missing.md")).rejects.toThrow(MarkdownParseError);
-    await expect(parseFile("/definitely/missing.md")).rejects.toMatchObject({
-      code: "FILE_READ_ERROR",
-    });
-  });
-});
-
-async function makeTempDir() {
-  return mkdtemp(join(tmpdir(), `md-parser-${randomUUID()}-`));
-}

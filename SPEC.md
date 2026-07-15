@@ -15,7 +15,7 @@ md-parser parses one Markdown document into stable structural views and can stri
 - `frontmatter` is parsed YAML data or `{}`.
 - Invalid frontmatter fails.
 - `body` is Markdown with frontmatter removed.
-- `parseFile(path)` reads UTF-8 text before parsing.
+- `parseFile(path)` reads UTF-8 text before parsing and is exported from `@holdenmatt/md-parser/node`.
 - Parse and file failures throw `MarkdownParseError`.
 - The public `MarkdownDocument` shape does not expose the internal Markdown AST.
 

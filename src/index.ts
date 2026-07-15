@@ -1,4 +1,4 @@
-export { MarkdownParseError, parse, parseFile } from "./parse.js";
+export { MarkdownParseError, parse } from "./parse.js";
 export { stringify } from "./stringify.js";
 
 export type {

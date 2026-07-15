@@ -37,6 +37,14 @@ const markdown = stringify({
 });
 ```
 
+Node filesystem IO is available from the Node-only subpath:
+
+```ts
+import { parseFile } from "@holdenmatt/md-parser/node";
+
+const document = await parseFile("notes.md");
+```
+
 ## API
 
 ### `parse(markdown)`
@@ -45,7 +53,7 @@ Parses a Markdown string and returns a `MarkdownDocument`.
 
 ### `parseFile(path)`
 
-Reads a UTF-8 Markdown file and returns a `Promise<MarkdownDocument>`.
+Reads a UTF-8 Markdown file and returns a `Promise<MarkdownDocument>`. Import it from `@holdenmatt/md-parser/node`.
 
 ### `stringify({ frontmatter, body })`
 
